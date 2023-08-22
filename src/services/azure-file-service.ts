@@ -7,6 +7,8 @@ import {
     UploadStreamDescriptorType, 
   } from "@medusajs/medusa"
   import {
+    BlobGenerateSasUrlOptions,
+      BlobSASPermissions,
       BlobServiceClient,
       ContainerClient
   } from "@azure/storage-blob"
@@ -21,14 +23,14 @@ import {
     static LIFE_TIME = Lifetime.SINGLETON
     protectedClient_ : ContainerClient
     publicClient_ : ContainerClient
+    sasOptionsBuilder_: () => BlobGenerateSasUrlOptions;
   
     constructor({}, options) {
       super({}, options)
-      console.log("AzureFileStorageService")
-      console.log(options)
       var serviceClient = BlobServiceClient.fromConnectionString(options.connectionString)
       this.protectedClient_ = serviceClient.getContainerClient(options.protectedContainer)
       this.publicClient_ = serviceClient.getContainerClient(options.publicContainer)
+      this.sasOptionsBuilder_ = options.sasOptionsBuilder ?? this.defaultSasOptionsBuilder
     }
     
     async upload(
@@ -61,10 +63,19 @@ import {
     async delete(
       file: DeleteFileType
     ): Promise<void> {
-      const protectedBlockClient = this.protectedClient_.getBlockBlobClient(file.fileKey)
-      await protectedBlockClient.deleteIfExists()
-      const publicBlockClient = this.publicClient_.getBlockBlobClient(file.fileKey)
-      await publicBlockClient.deleteIfExists()
+      var fileKey = file.fileKey ?? file.file_key //for some reason it's sent as file_key. adding this to be ready for future bugfix
+      try {
+        const protectedBlockClient = this.protectedClient_.getBlockBlobClient(fileKey)
+        await protectedBlockClient.deleteIfExists()
+      } catch (ex) {
+        console.log('failed deleting protected file: ' + ex)
+      }
+      try {
+        const publicBlockClient = this.publicClient_.getBlockBlobClient(fileKey)
+        await publicBlockClient.deleteIfExists()
+      } catch (ex) {
+        console.log('failed deleting public file: ' + ex)
+      }
     }
   
     async getUploadStreamDescriptor(
@@ -73,7 +84,6 @@ import {
           contentType?: string
         }
     ): Promise<FileServiceGetUploadStreamResult> {
-      console.log(fileData)
       const usePrivateBucket = fileData.usePrivateBucket ?? true
   
       const client = usePrivateBucket ? this.protectedClient_ : this.publicClient_
@@ -104,7 +114,15 @@ import {
     ): Promise<string> {
       const client = usePrivateBucket ? this.protectedClient_ : this.publicClient_
       const blockClient = client.getBlockBlobClient(fileData.fileKey)
-      return blockClient.url
+      return usePrivateBucket ? await blockClient.generateSasUrl(this.sasOptionsBuilder_()) : blockClient.url
+    }
+
+    private defaultSasOptionsBuilder() : BlobGenerateSasUrlOptions {
+      var now = new Date();
+      return { 
+        permissions: BlobSASPermissions.from({ read: true }),
+        expiresOn: new Date(now.getFullYear(), now.getMonth(), now.getDate()+30)
+      }
     }
   }
   

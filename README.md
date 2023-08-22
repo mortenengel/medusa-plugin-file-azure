@@ -33,7 +33,11 @@ const plugins = [
     options: {
       connectionString: "AZURE CONNECTION STRING",
       protectedContainer: "private",
-      publicContainer: "public"
+      publicContainer: "public",
+      //if you want to customize expiry or access permissions on the sas link for private downloads, add an optionsbuilder of the type
+      //() => BlobGenerateSasUrlOptions"
+      //default is 30 days, read only
+      //sasOptionsBuilder: () => BlobGenerateSasUrlOptions { //implement }
     }
   },
 ]
