@@ -21,10 +21,9 @@
     "typescript": "^4.9.5"
   },
   "scripts": {
-    "prepublishOnly": "cross-env NODE_ENV=production tsc --build",
-    "test": "jest --passWithNoTests src",
-    "build": "rimraf dist && tsc",
-    "watch": "tsc --watch"
+    "clean": "cross-env ./node_modules/.bin/rimraf dist",
+    "build": "cross-env npm run clean && tsc -p tsconfig.json",
+    "prepare": "cross-env NODE_ENV=production npm run build"
   },
   "peerDependencies": {
     "medusa-interfaces": "^1.3.7"
