@@ -1,23 +1,25 @@
 import { 
-    AbstractFileService, 
-    DeleteFileType, 
-    FileServiceGetUploadStreamResult, 
-    FileServiceUploadResult, 
-    GetUploadedFileType, 
-    UploadStreamDescriptorType, 
-  } from "@medusajs/medusa"
-  import {
-    BlobGenerateSasUrlOptions,
-      BlobSASPermissions,
-      BlobServiceClient,
-      ContainerClient
-  } from "@azure/storage-blob"
-  import {
-      parse
-  } from "path"
-  import fs from "fs"
-  import stream from "stream"
-  import { Lifetime } from "awilix"
+  AbstractFileService
+} from "@medusajs/medusa"
+import { 
+  FileServiceUploadResult,
+  FileServiceGetUploadStreamResult,
+  GetUploadedFileType,
+  DeleteFileType,
+  UploadStreamDescriptorType 
+} from "@medusajs/types"
+import {
+  BlobGenerateSasUrlOptions,
+    BlobSASPermissions,
+    BlobServiceClient,
+    ContainerClient
+} from "@azure/storage-blob"
+import {
+    parse
+} from "path"
+import fs from "fs"
+import stream from "stream"
+import { Lifetime } from "awilix"
   
   class AzureFileService extends AbstractFileService {
     static LIFE_TIME = Lifetime.SINGLETON
@@ -79,12 +81,9 @@ import {
     }
   
     async getUploadStreamDescriptor(
-      fileData: UploadStreamDescriptorType  & {
-          usePrivateBucket?: boolean
-          contentType?: string
-        }
+      fileData: UploadStreamDescriptorType
     ): Promise<FileServiceGetUploadStreamResult> {
-      const usePrivateBucket = fileData.usePrivateBucket ?? true
+      const usePrivateBucket = fileData.isPrivate ?? true
   
       const client = usePrivateBucket ? this.protectedClient_ : this.publicClient_
       const fileKey = `${fileData.name}.${fileData.ext}`
@@ -100,9 +99,9 @@ import {
     }
   
     async getDownloadStream(
-      fileData: GetUploadedFileType & { usePrivateBucket?: boolean }
+      fileData: GetUploadedFileType
     ): Promise<NodeJS.ReadableStream> {
-      const usePrivateBucket = fileData.usePrivateBucket ?? true
+      const usePrivateBucket = fileData.isPrivate ?? true
       const client = usePrivateBucket ? this.protectedClient_ : this.publicClient_
       const blockClient = client.getBlockBlobClient(fileData.fileKey)
       const downloadResponse = await blockClient.download();
@@ -110,8 +109,9 @@ import {
     }
   
     async getPresignedDownloadUrl(
-      { usePrivateBucket = true, ...fileData }
+      fileData: GetUploadedFileType
     ): Promise<string> {
+      const usePrivateBucket = fileData.isPrivate ?? true
       const client = usePrivateBucket ? this.protectedClient_ : this.publicClient_
       const blockClient = client.getBlockBlobClient(fileData.fileKey)
       return usePrivateBucket ? await blockClient.generateSasUrl(this.sasOptionsBuilder_()) : blockClient.url

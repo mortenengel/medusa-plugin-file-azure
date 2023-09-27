@@ -1,6 +1,6 @@
 {
   "name": "medusa-plugin-file-azure",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Medusa plugin for Azure Storage",
   "main": "dist/index.js",
   "files": [
@@ -14,7 +14,7 @@
   "author": "Morten Engel",
   "license": "MIT",
   "devDependencies": {
-    "@medusajs/medusa": "1.13.1",
+    "@medusajs/medusa": "1.15.0",
     "cross-env": "^5.2.1",
     "jest": "^25.5.4",
     "rimraf": "^5.0.1",
@@ -34,6 +34,7 @@
   ],
   "dependencies": {
     "@azure/storage-blob": "^12.15.0",
+    "@medusajs/types": "^1.11.1",
     "@types/multer": "^1.4.7",
     "awilix": "^8.0.1"
   }
